@@ -29,7 +29,6 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         }
-        /* Custom Chrome Scrollbar for a cleaner look */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -37,7 +36,6 @@
             background: #cbd5e1;
             border-radius: 3px;
         }
-        /* Shake animation for wrong passcode */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
@@ -82,7 +80,7 @@
                 </div>
                 <div>
                     <h2 class="font-bold text-lg leading-tight">Loyalty Program</h2>
-                    <p class="text-xs text-[#ffd400] font-medium">Hello Burger</p>
+                    <p class="text-xs text-[#ffd400] font-medium">Firebase Database</p>
                 </div>
             </div>
             <button onclick="logout()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 active:scale-90 transition-all">
@@ -179,19 +177,42 @@
         </div>
     </div>
 
-    <script>
-        // --- STREAMING_CHUNK: System Configurations ---
-        const CONFIG = {
-            PASSCODE: "1111", // Passcode ပြောင်းရန် ဤနေရာတွင် ပြင်ပါ။
-            REWARD_COST: 10,   // Cheese Burger ရရန် လိုအပ်သော Point
-            API_URL: "https://script.google.com/macros/s/AKfycbwhbDs9Dx7doWvbAErKXqThm4j_f7IbFqJ7ltkACHCnDAQXB24MBXerAHZEIUU-6HNUdQ/exec" // 👈 အရေးကြီး: Google Script ၏ Web App Link အစစ်ကို ဤနေရာတွင် အစားထိုးပါ
+    <!-- FIREBASE MODULAR SDK CHUNKS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // အစ်ကို့ရဲ့ ကိုယ်ပိုင် Firebase Project နှင့် ချိတ်ဆက်ထားသော Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7iX2UEEuv4AwVndL_RyLzGp7ZEy70fzg",
+            authDomain: "hello-burger-point-system.firebaseapp.com",
+            projectId: "hello-burger-point-system",
+            storageBucket: "hello-burger-point-system.firebasestorage.app",
+            messagingSenderId: "716912236933",
+            appId: "1:716912236933:web:424c68852f71fa7ea94cec",
+            measurementId: "G-LHKY3BVS7F"
         };
 
-        // --- STATE VARIABLES ---
-        let currentPhone = null;
-        let currentCustomerData = null; // Store cloud data
+        let app, db;
+        
+        // Firebase ကို စတင် အသက်သွင်းခြင်း
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase Successfully Connected!");
+        } catch (e) {
+            console.error("Firebase init error:", e);
+        }
 
-        // --- DOM ELEMENTS ---
+        // --- Configuration ---
+        const PASSCODE = "1111"; 
+        const REWARD_COST = 10;   
+
+        // --- State Variables ---
+        let currentPhone = null;
+        let currentCustomerData = null;
+
+        // --- DOM Elements ---
         const ui = {
             loginScreen: document.getElementById('loginScreen'),
             appScreen: document.getElementById('appScreen'),
@@ -206,14 +227,18 @@
             addPointInput: document.getElementById('addPointInput')
         };
 
-        // --- STREAMING_CHUNK: Authentication ---
-        
-        ui.passcodeInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') checkPasscode();
+        // Phone Number Auto Formatter
+        ui.phoneInput.addEventListener('input', function(e) {
+            let formatted = this.value.replace(/[^0-9+]/g, '');
+            if (formatted.startsWith('+959')) {
+                formatted = '09' + formatted.substring(4);
+            }
+            this.value = formatted;
         });
 
-        function checkPasscode() {
-            if (ui.passcodeInput.value === CONFIG.PASSCODE) {
+        // 1. Passcode Check
+        window.checkPasscode = function() {
+            if (ui.passcodeInput.value === PASSCODE) {
                 ui.loginScreen.classList.add('hidden');
                 ui.appScreen.classList.remove('hidden');
                 ui.passcodeInput.value = '';
@@ -221,60 +246,27 @@
             } else {
                 ui.loginScreen.classList.add('shake-animation');
                 setTimeout(() => ui.loginScreen.classList.remove('shake-animation'), 400);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'မှားယွင်းနေပါသည်',
-                    text: 'Passcode မှန်ကန်မှုမရှိပါ။ ပြန်လည်ကြိုးစားပါ။',
-                    confirmButtonColor: '#ff6700'
-                });
+                Swal.fire({ icon: 'error', title: 'မှားယွင်းနေပါသည်', text: 'Passcode မှန်ကန်မှုမရှိပါ။', confirmButtonColor: '#ff6700' });
                 ui.passcodeInput.value = '';
             }
-        }
+        };
 
-        function logout() {
+        ui.passcodeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPasscode(); });
+
+        window.logout = function() {
             resetCurrentCustomer();
             ui.appScreen.classList.add('hidden');
             ui.loginScreen.classList.remove('hidden');
-        }
+        };
 
-        // --- STREAMING_CHUNK: Cloud Database Operations ---
-
-        // Helper function to send data to Google Sheet
-        async function saveToDatabase(customerData, successMessage, customIcon = 'success', customHtml = null) {
-            Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-            
-            try {
-                const response = await fetch(CONFIG.API_URL, {
-                    method: 'POST',
-                    // Using text/plain to avoid CORS preflight errors with Google Apps Script
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'update_or_create', ...customerData })
-                });
-                
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    if (customHtml) {
-                        Swal.fire({ icon: customIcon, title: 'အောင်မြင်ပါသည်', text: successMessage, confirmButtonColor: '#16a34a', backdrop: customHtml });
-                    } else if (successMessage) {
-                        Swal.fire({ icon: customIcon, title: 'အောင်မြင်ပါသည်', text: successMessage, timer: 1500, showConfirmButton: false });
-                    } else {
-                        Swal.close();
-                    }
-                    return true;
-                } else {
-                    throw new Error("API returned failure");
-                }
-            } catch (error) {
-                 console.error(error);
-                 Swal.fire({ icon: 'error', title: 'Connection Error', text: 'အင်တာနက်ချိတ်ဆက်မှု မကောင်းပါ။', confirmButtonColor: '#ff6700' });
-                 return false;
+        // 2. Load Customer from Firebase
+        window.loadCustomer = async function() {
+            if(!db) {
+                Swal.fire({ icon: 'error', title: 'Firebase မချိတ်ရသေးပါ', text: 'Code ထဲတွင် Firebase Config ကို အရင်ထည့်သွင်းပေးပါ။' });
+                return;
             }
-        }
 
-        // Fetch user data from Google Sheet
-        async function loadCustomer() {
-            const phone = ui.phoneInput.value.trim();
+            const phone = ui.phoneInput.value.replace(/[^0-9+]/g, '').trim();
             const name = ui.nameInput.value.trim();
 
             if (!phone) {
@@ -282,33 +274,23 @@
                 return;
             }
 
-            if (CONFIG.API_URL === "YOUR_WEB_APP_URL_HERE") {
-                 Swal.fire({ icon: 'error', title: 'API မချိတ်ရသေးပါ', text: 'Code ထဲတွင် Google Script URL အစားထိုးရန် ကျန်နေပါသေးသည်။' });
-                 return;
-            }
-
             Swal.fire({ title: 'ရှာဖွေနေပါသည်...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             try {
-                const response = await fetch(`${CONFIG.API_URL}?phone=${phone}`);
-                const data = await response.json();
-                
-                if (data.status === 'found') {
+                const docRef = doc(db, "customers", phone);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
                     // Existing customer
-                    currentCustomerData = { 
-                        phone: data.phone, 
-                        name: data.name, 
-                        total: parseInt(data.total), 
-                        used: parseInt(data.used), 
-                        balance: parseInt(data.balance) 
-                    };
-                    ui.nameInput.value = data.name; // Show stored name
+                    currentCustomerData = docSnap.data();
+                    ui.nameInput.value = currentCustomerData.name;
                     Swal.close();
                 } else {
-                    // Create new customer via API
+                    // Create new customer
                     currentCustomerData = { phone: phone, name: name || "Customer", total: 0, used: 0, balance: 0 };
-                    await saveToDatabase(currentCustomerData, 'Customer အသစ်အတွက် မှတ်တမ်းတင်ပြီးပါပြီ။');
+                    await setDoc(docRef, currentCustomerData);
                     ui.nameInput.value = currentCustomerData.name;
+                    Swal.fire({ icon: 'success', title: 'အောင်မြင်ပါသည်', text: 'Customer အသစ်အတွက် မှတ်တမ်းတင်ပြီးပါပြီ။', timer: 1500, showConfirmButton: false });
                 }
 
                 currentPhone = phone;
@@ -317,43 +299,13 @@
                 ui.actionSection.classList.remove('opacity-50', 'pointer-events-none');
 
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Connection Error', text: 'အင်တာနက်ချိတ်ဆက်မှု စစ်ဆေးပါ။ (VPN ဖွင့်ထားပါက ခဏပိတ်ထားပါ)' });
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'ချိတ်ဆက်မှု ပြဿနာရှိနေပါသည်။' });
             }
-        }
+        };
 
-        function updateDashboard() {
-            if (!currentPhone || !currentCustomerData) return;
-            
-            // Animate numbers
-            [ui.displayTotal, ui.displayUsed, ui.displayBalance].forEach(el => {
-                el.style.transform = 'scale(1.2)';
-                setTimeout(() => el.style.transform = 'scale(1)', 200);
-                el.style.transition = 'transform 0.2s ease';
-            });
-
-            ui.displayTotal.innerText = currentCustomerData.total;
-            ui.displayUsed.innerText = currentCustomerData.used;
-            ui.displayBalance.innerText = currentCustomerData.balance;
-        }
-
-        function resetCurrentCustomer() {
-            currentPhone = null;
-            currentCustomerData = null;
-            ui.phoneInput.value = '';
-            ui.nameInput.value = '';
-            ui.addPointInput.value = '1';
-            
-            ui.displayTotal.innerText = '0';
-            ui.displayUsed.innerText = '0';
-            ui.displayBalance.innerText = '0';
-            
-            ui.statsSection.classList.add('opacity-50', 'pointer-events-none');
-            ui.actionSection.classList.add('opacity-50', 'pointer-events-none');
-        }
-
-        // --- STREAMING_CHUNK: Actions (Add/Use Points) ---
-
-        async function addPoints() {
+        // 3. Add Points to Firebase
+        window.addPoints = async function() {
             if (!currentPhone || !currentCustomerData) return;
             
             const pointsToAdd = parseInt(ui.addPointInput.value);
@@ -362,24 +314,35 @@
                 return;
             }
 
-            // Copy old data, calculate new values, then save to Cloud
-            const updatedData = { ...currentCustomerData };
-            updatedData.total += pointsToAdd;
-            updatedData.balance += pointsToAdd;
-            
-            const success = await saveToDatabase(updatedData, `+${pointsToAdd} Point(s) ကိုအောင်မြင်စွာထည့်သွင်းပြီးပါပြီ။`);
-            
-            if (success) {
-                currentCustomerData = updatedData; // Update local state only if cloud save is successful
+            Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            try {
+                const newTotal = currentCustomerData.total + pointsToAdd;
+                const newBalance = currentCustomerData.balance + pointsToAdd;
+                
+                const docRef = doc(db, "customers", currentPhone);
+                await updateDoc(docRef, {
+                    total: newTotal,
+                    balance: newBalance
+                });
+
+                // Update Local UI
+                currentCustomerData.total = newTotal;
+                currentCustomerData.balance = newBalance;
                 updateDashboard();
                 ui.addPointInput.value = '1';
-            }
-        }
 
-        function usePoints() {
+                Swal.fire({ icon: 'success', title: 'အောင်မြင်ပါသည်', text: `+${pointsToAdd} Point(s) ကိုပေါင်းထည့်ပြီးပါပြီ။`, timer: 1500, showConfirmButton: false });
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Point ပေါင်းထည့်၍ မရပါ။' });
+            }
+        };
+
+        // 4. Use Points in Firebase
+        window.usePoints = function() {
             if (!currentPhone || !currentCustomerData) return;
             
-            if (currentCustomerData.balance < CONFIG.REWARD_COST) {
+            if (currentCustomerData.balance < REWARD_COST) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Point မလောက်ပါ',
@@ -400,34 +363,63 @@
                 cancelButtonText: 'မလုပ်ပါ'
             }).then(async (result) => {
                 if (result.isConfirmed) {
+                    Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                     
-                    const updatedData = { ...currentCustomerData };
-                    updatedData.balance -= CONFIG.REWARD_COST;
-                    updatedData.used += CONFIG.REWARD_COST;
+                    try {
+                        const newBalance = currentCustomerData.balance - REWARD_COST;
+                        const newUsed = currentCustomerData.used + REWARD_COST;
 
-                    // Deduct from Cloud DB
-                    const success = await saveToDatabase(
-                        updatedData, 
-                        'Cheese Burger (1) ခု Free ပေးလိုက်ပါ။', 
-                        'success', 
-                        `rgba(0,0,0,0.8) url("https://media.giphy.com/media/xTiTnqUxyWbsAXq7Ju/giphy.gif") left top no-repeat`
-                    );
+                        const docRef = doc(db, "customers", currentPhone);
+                        await updateDoc(docRef, {
+                            balance: newBalance,
+                            used: newUsed
+                        });
 
-                    if (success) {
-                        currentCustomerData = updatedData;
+                        currentCustomerData.balance = newBalance;
+                        currentCustomerData.used = newUsed;
                         updateDashboard();
+
+                        Swal.fire({ 
+                            icon: 'success', 
+                            title: 'အောင်မြင်ပါသည်', 
+                            text: 'Cheese Burger (1) ခု Free ပေးလိုက်ပါ။',
+                            confirmButtonColor: '#16a34a',
+                            backdrop: `rgba(0,0,0,0.8) url("https://media.giphy.com/media/xTiTnqUxyWbsAXq7Ju/giphy.gif") left top no-repeat` 
+                        });
+                    } catch(error) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Point နှုတ်၍ မရပါ။' });
                     }
                 }
             });
+        };
+
+        function updateDashboard() {
+            if (!currentPhone || !currentCustomerData) return;
+            [ui.displayTotal, ui.displayUsed, ui.displayBalance].forEach(el => {
+                el.style.transform = 'scale(1.2)';
+                setTimeout(() => el.style.transform = 'scale(1)', 200);
+                el.style.transition = 'transform 0.2s ease';
+            });
+            ui.displayTotal.innerText = currentCustomerData.total;
+            ui.displayUsed.innerText = currentCustomerData.used;
+            ui.displayBalance.innerText = currentCustomerData.balance;
         }
 
-        // Auto load if pressing enter on fields
-        ui.phoneInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') loadCustomer();
-        });
-        ui.nameInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') loadCustomer();
-        });
+        function resetCurrentCustomer() {
+            currentPhone = null;
+            currentCustomerData = null;
+            ui.phoneInput.value = '';
+            ui.nameInput.value = '';
+            ui.addPointInput.value = '1';
+            ui.displayTotal.innerText = '0';
+            ui.displayUsed.innerText = '0';
+            ui.displayBalance.innerText = '0';
+            ui.statsSection.classList.add('opacity-50', 'pointer-events-none');
+            ui.actionSection.classList.add('opacity-50', 'pointer-events-none');
+        }
+
+        ui.phoneInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loadCustomer(); });
+        ui.nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loadCustomer(); });
 
     </script>
 </body>
