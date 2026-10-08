@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello Burger | Point System</title>
+    <title>Hello Burger | Loyalty Point</title>
     
-    <!-- Favicon -->
+    <!-- Favicon (Hello Burger Logo) -->
     <link rel="icon" type="image/png" href="hello-burger-logo.png">
     
     <!-- Tailwind CSS -->
@@ -47,16 +47,17 @@
             <img src="hello-burger-logo.png" alt="Hello Burger Logo" class="w-full h-full object-contain p-1" onerror="this.src='https://placehold.co/150x150/ffd400/ff6700?text=Logo'">
         </div>
         <h1 class="text-2xl font-bold text-gray-800 mb-1">Hello Burger</h1>
-        <p class="text-sm text-gray-500 mb-6 font-medium">Staff Portal (Secure Login)</p>
+        <p class="text-sm text-gray-500 mb-6 font-medium">Login</p>
         
         <div class="w-full space-y-4">
-            <!-- Username Input (Changed from Email) -->
+            <!-- Username Input -->
             <div class="relative">
                 <i class="fa-solid fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input type="text" id="usernameInput" placeholder="Username (e.g. staff1)" 
+                <input type="text" id="usernameInput" placeholder="Username (e.g. 62branch)" 
                        class="w-full bg-white border border-gray-200 text-gray-800 font-medium rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-[#ff6700] transition-all">
             </div>
 
+            <!-- Password Input -->
             <div class="relative">
                 <i class="fa-solid fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 <input type="password" id="passwordInput" placeholder="Password" 
@@ -79,7 +80,7 @@
                     <img src="hello-burger-logo.png" alt="Logo" class="w-full h-full object-contain p-0.5" onerror="this.src='https://placehold.co/150x150/ffd400/ff6700?text=Logo'">
                 </div>
                 <div>
-                    <h2 class="font-bold text-lg leading-tight">Loyalty Program</h2>
+                    <h2 class="font-bold text-lg leading-tight">Loyalty Point</h2>
                     <p class="text-xs text-[#ffd400] font-medium" id="currentUserDisplay">Logged In</p>
                 </div>
             </div>
@@ -116,7 +117,7 @@
 
             <!-- Stats Dashboard -->
             <div id="statsSection" class="opacity-50 pointer-events-none transition-opacity duration-300">
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Points Record (Read Only)</label>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Points Record</label>
                 <div class="grid grid-cols-3 gap-3">
                     <div class="bg-blue-50 border border-blue-100 rounded-2xl p-3 text-center flex flex-col justify-center">
                         <span class="text-xs font-semibold text-blue-600 mb-1">စုစုပေါင်း</span>
@@ -177,7 +178,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
-        // 🔥 Firebase Config
+        // 🔥 Firebase Config (Hello Burger)
         const firebaseConfig = {
             apiKey: "AIzaSyA7iX2UEEuv4AwVndL_RyLzGp7ZEy70fzg",
             authDomain: "hello-burger-point-system.firebaseapp.com",
@@ -200,12 +201,13 @@
         const REWARD_COST = 10;   
         let currentPhone = null;
         let currentCustomerData = null;
+        let currentBranchName = ""; 
 
         const ui = {
             globalLoader: document.getElementById('globalLoader'),
             loginScreen: document.getElementById('loginScreen'),
             appScreen: document.getElementById('appScreen'),
-            usernameInput: document.getElementById('usernameInput'), // Changed
+            usernameInput: document.getElementById('usernameInput'), 
             passwordInput: document.getElementById('passwordInput'),
             currentUserDisplay: document.getElementById('currentUserDisplay'),
             phoneInput: document.getElementById('phoneInput'),
@@ -225,7 +227,8 @@
 
             if (user) {
                 // Remove @helloburger.com to just show the username
-                ui.currentUserDisplay.innerText = user.email.split('@')[0]; 
+                currentBranchName = user.email.split('@')[0]; 
+                ui.currentUserDisplay.innerText = "Branch: " + currentBranchName; 
                 ui.loginScreen.classList.add('hidden');
                 ui.appScreen.classList.remove('hidden');
                 ui.phoneInput.focus();
@@ -237,7 +240,8 @@
 
         // Username Login Function
         window.loginWithUsername = async function() {
-            let username = ui.usernameInput.value.trim().toLowerCase();
+            // Space တွေကို အလိုအလျောက် ဖြတ်ထုတ်ပေးမည့် ကုဒ် (ဥပမာ - "chin su" -> "chinsu")
+            let username = ui.usernameInput.value.replace(/\s+/g, '').toLowerCase();
             const password = ui.passwordInput.value;
 
             if(!username || !password) {
@@ -340,7 +344,9 @@
                         name: name || "Customer", 
                         total: 0, 
                         used: 0, 
-                        balance: 0 
+                        balance: 0,
+                        registered_branch: currentBranchName, // စာရင်းသွင်းပေးလိုက်သော ဆိုင်ခွဲ
+                        last_visited_branch: currentBranchName // နောက်ဆုံး လာရောက်သော ဆိုင်ခွဲ
                     };
                     await setDoc(docRef, currentCustomerData);
                     
@@ -381,7 +387,8 @@
                 const docRef = doc(db, "customers", currentPhone);
                 await updateDoc(docRef, {
                     total: newTotal,
-                    balance: newBalance
+                    balance: newBalance,
+                    last_visited_branch: currentBranchName // နောက်ဆုံး လာရောက်သော ဆိုင်ခွဲကို Update လုပ်ရန်
                 });
 
                 currentCustomerData.total = newTotal;
@@ -428,7 +435,8 @@
                         const docRef = doc(db, "customers", currentPhone);
                         await updateDoc(docRef, {
                             balance: newBalance,
-                            used: newUsed
+                            used: newUsed,
+                            last_visited_branch: currentBranchName // နောက်ဆုံး လာရောက်သော ဆိုင်ခွဲကို Update လုပ်ရန်
                         });
 
                         currentCustomerData.balance = newBalance;
