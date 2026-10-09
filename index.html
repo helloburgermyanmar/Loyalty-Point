@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello Burger | Point System</title>
     
-    <!-- Favicon (Hello Burger Logo) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="hello-burger-logo.png">
     
     <!-- Tailwind CSS -->
@@ -50,14 +50,11 @@
         <p class="text-sm text-gray-500 mb-6 font-medium">Staff Portal (Secure Login)</p>
         
         <div class="w-full space-y-4">
-            <!-- Username Input -->
             <div class="relative">
                 <i class="fa-solid fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 <input type="text" id="usernameInput" placeholder="Username (e.g. 62branch)" 
                        class="w-full bg-white border border-gray-200 text-gray-800 font-medium rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-[#ff6700] transition-all">
             </div>
-
-            <!-- Password Input -->
             <div class="relative">
                 <i class="fa-solid fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 <input type="password" id="passwordInput" placeholder="Password" 
@@ -113,12 +110,18 @@
                         <i class="fa-solid fa-magnifying-glass"></i> Check / Register
                     </button>
                     
+                    <!-- Admin Only Buttons -->
                     <button onclick="showCustomerList()" id="btnTopCustomers" class="w-full mt-2 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl py-3 hover:bg-gray-50 active:scale-95 transition-all hidden items-center justify-center gap-2 shadow-sm">
-                        <i class="fa-solid fa-users"></i> Customer စာရင်းအားလုံး ကြည့်မည် (Admin)
+                        <i class="fa-solid fa-users"></i> Customer စာရင်းများ (Admin)
                     </button>
 
                     <button onclick="showTransactions()" id="btnTransactions" class="w-full mt-2 bg-[#ff6700]/10 border border-[#ff6700]/20 text-[#d95800] font-semibold rounded-xl py-3 hover:bg-[#ff6700]/20 active:scale-95 transition-all hidden items-center justify-center gap-2 shadow-sm">
                         <i class="fa-solid fa-clock-rotate-left"></i> Point မှတ်တမ်းများ (Admin)
+                    </button>
+                    
+                    <!-- NEW Branch Stats Button -->
+                    <button onclick="showBranchStats()" id="btnBranchStats" class="w-full mt-2 bg-blue-50 border border-blue-200 text-blue-700 font-semibold rounded-xl py-3 hover:bg-blue-100 active:scale-95 transition-all hidden items-center justify-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-chart-pie"></i> ဆိုင်ခွဲများ၏ စာရင်းချုပ် (Admin)
                     </button>
                 </div>
             </div>
@@ -167,16 +170,12 @@
 
     <!-- 3. Customer List Screen -->
     <div id="listScreen" class="hidden w-full max-w-md h-[90vh] md:h-auto flex flex-col glass-card rounded-3xl overflow-hidden shadow-2xl relative border border-gray-100">
-        
-        <!-- Header -->
         <div class="burger-gradient p-5 flex items-center text-white rounded-b-3xl shadow-md z-10">
             <button onclick="hideCustomerList()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 active:scale-90 transition-all mr-3">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             <h2 class="font-bold text-lg leading-tight">Customer စာရင်း</h2>
         </div>
-
-        <!-- Filter / Sort Options -->
         <div class="p-4 bg-gray-50 border-b border-gray-200">
             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">စစ်ထုတ်ရန် ရွေးချယ်ပါ</label>
             <div class="relative">
@@ -190,27 +189,30 @@
                 <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
         </div>
-
-        <!-- List Content Area -->
-        <div id="customerListContent" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-100/50">
-            <!-- List Items will be injected here via JS -->
-        </div>
+        <div id="customerListContent" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-100/50"></div>
     </div>
 
     <!-- 4. Transactions Screen (Admin Only) -->
     <div id="transactionScreen" class="hidden w-full max-w-md h-[90vh] md:h-auto flex flex-col glass-card rounded-3xl overflow-hidden shadow-2xl relative border border-gray-100">
-        
-        <!-- Header -->
         <div class="burger-gradient p-5 flex items-center text-white rounded-b-3xl shadow-md z-10">
             <button onclick="hideTransactions()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 active:scale-90 transition-all mr-3">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             <h2 class="font-bold text-lg leading-tight">Point မှတ်တမ်းများ</h2>
         </div>
+        <div id="transactionListContent" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-100/50"></div>
+    </div>
 
-        <!-- List Content Area -->
-        <div id="transactionListContent" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-100/50">
-            <!-- List Items will be injected here via JS -->
+    <!-- 5. Branch Stats Screen (Admin Only) -->
+    <div id="branchStatsScreen" class="hidden w-full max-w-md h-[90vh] md:h-auto flex flex-col glass-card rounded-3xl overflow-hidden shadow-2xl relative border border-gray-100">
+        <div class="burger-gradient p-5 flex items-center text-white rounded-b-3xl shadow-md z-10">
+            <button onclick="hideBranchStats()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 active:scale-90 transition-all mr-3">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h2 class="font-bold text-lg leading-tight">ဆိုင်ခွဲ စာရင်းချုပ်</h2>
+        </div>
+        <div id="branchStatsContent" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-100/50">
+            <!-- Stats will be injected here via JS -->
         </div>
     </div>
 
@@ -267,10 +269,12 @@
             customerListContent: document.getElementById('customerListContent'),
             btnTopCustomers: document.getElementById('btnTopCustomers'),
             btnTransactions: document.getElementById('btnTransactions'),
-            transactionListContent: document.getElementById('transactionListContent')
+            transactionListContent: document.getElementById('transactionListContent'),
+            btnBranchStats: document.getElementById('btnBranchStats'),
+            branchStatsScreen: document.getElementById('branchStatsScreen'),
+            branchStatsContent: document.getElementById('branchStatsContent')
         };
 
-        // --- AUTHENTICATION LOGIC ---
         onAuthStateChanged(auth, (user) => {
             ui.globalLoader.style.opacity = '0';
             setTimeout(() => ui.globalLoader.style.display = 'none', 500);
@@ -287,12 +291,16 @@
                     ui.btnTopCustomers.classList.add('flex');
                     ui.btnTransactions.classList.remove('hidden');
                     ui.btnTransactions.classList.add('flex');
+                    ui.btnBranchStats.classList.remove('hidden');
+                    ui.btnBranchStats.classList.add('flex');
                 } else {
                     ui.currentUserDisplay.innerText = "Branch: " + currentBranchName; 
                     ui.btnTopCustomers.classList.add('hidden');
                     ui.btnTopCustomers.classList.remove('flex');
                     ui.btnTransactions.classList.add('hidden');
                     ui.btnTransactions.classList.remove('flex');
+                    ui.btnBranchStats.classList.add('hidden');
+                    ui.btnBranchStats.classList.remove('flex');
                 }
 
                 ui.loginScreen.classList.add('hidden');
@@ -305,6 +313,7 @@
         });
 
         window.loginWithUsername = async function() {
+            // Space များကို အလိုအလျောက် ဖြတ်ထုတ်ပေးခြင်း
             let username = ui.usernameInput.value.replace(/\s+/g, '').toLowerCase();
             const password = ui.passwordInput.value;
 
@@ -356,7 +365,6 @@
         ui.passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginWithUsername(); });
         ui.usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') ui.passwordInput.focus(); });
 
-        // --- APP LOGIC ---
         ui.phoneInput.addEventListener('input', function(e) {
             let formatted = this.value.replace(/[^0-9+]/g, ''); 
             if (formatted.startsWith('+959')) {
@@ -453,7 +461,7 @@
                     last_visited_branch: currentBranchName
                 });
 
-                // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - ADD) 📝
+                // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - ADD)
                 const now = new Date();
                 await addDoc(collection(db, "transactions"), {
                     phone: currentPhone,
@@ -508,14 +516,14 @@
                     try {
                         const docRef = doc(db, "customers", currentPhone);
                         
-                        // 1. Point နုတ်ခြင်း
+                        // 1. Point နုတ်ခြင်း (Increment)
                         await updateDoc(docRef, {
                             balance: increment(-REWARD_COST),
                             used: increment(REWARD_COST),
                             last_visited_branch: currentBranchName
                         });
 
-                        // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - USE) 📝
+                        // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - USE)
                         const now = new Date();
                         await addDoc(collection(db, "transactions"), {
                             phone: currentPhone,
@@ -603,7 +611,8 @@
             else if (sortVal === 'nameAsc') { orderField = "name"; orderDir = "asc"; }
 
             try {
-                const q = query(collection(db, "customers"), orderBy(orderField, orderDir), limit(50));
+                // Limit 20 Customer per request
+                const q = query(collection(db, "customers"), orderBy(orderField, orderDir), limit(20));
                 const querySnapshot = await getDocs(q);
                 
                 let sorted = [];
@@ -612,7 +621,7 @@
                 });
 
                 ui.customerListContent.innerHTML = '';
-                ui.customerListContent.innerHTML += `<div class="bg-[#ffd400]/20 text-[#d95800] text-xs font-semibold text-center py-2.5 rounded-xl border border-[#ffd400]/50 mb-4 shadow-sm flex justify-center items-center gap-2"><i class="fa-solid fa-bolt"></i> ထိပ်ဆုံးစာရင်း (၅၀) ကိုသာ ပြသထားပါသည်။</div>`;
+                ui.customerListContent.innerHTML += `<div class="bg-[#ffd400]/20 text-[#d95800] text-xs font-semibold text-center py-2.5 rounded-xl border border-[#ffd400]/50 mb-4 shadow-sm flex justify-center items-center gap-2"><i class="fa-solid fa-bolt"></i> ထိပ်ဆုံးစာရင်း (၂၀) ကိုသာ ပြသထားပါသည်။</div>`;
 
                 if (sorted.length === 0) {
                     ui.customerListContent.innerHTML += '<div class="text-center text-gray-500 mt-10">မှတ်တမ်း မရှိသေးပါ။</div>';
@@ -652,10 +661,21 @@
                             </div>
                         </div>
                         
-                        <div class="flex justify-between text-[10px] text-gray-400 font-medium bg-gray-50/50 p-2 rounded-lg">
-                            <span><i class="fa-solid fa-calendar-days mr-1"></i> ${c.joined_date || '-'}</span>
-                            <span><i class="fa-solid fa-store mr-1"></i> ${c.last_visited_branch || c.registered_branch || '-'}</span>
+                        <div class="flex flex-col gap-1.5 text-[10px] text-gray-500 font-medium bg-gray-50 p-2.5 rounded-lg border border-gray-200 mt-1">
+                            <div class="flex justify-between items-center">
+                                <span><i class="fa-solid fa-calendar-check text-[#ff6700] mr-1"></i> Member ဖြစ်သည့်ရက်:</span>
+                                <span class="text-gray-800">${c.joined_date || '-'}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span><i class="fa-solid fa-house-chimney-user text-blue-500 mr-1"></i> စာရင်းဖွင့်ခဲ့သည့်ဆိုင်:</span>
+                                <span class="text-gray-800 font-bold">${c.registered_branch || '-'}</span>
+                            </div>
+                            <div class="flex justify-between items-center border-t border-gray-200 pt-1.5 mt-0.5">
+                                <span><i class="fa-solid fa-shop text-green-500 mr-1"></i> နောက်ဆုံးလာစားခဲ့သည့်ဆိုင်:</span>
+                                <span class="text-green-700 font-black bg-green-100 px-2 py-0.5 rounded">${c.last_visited_branch || '-'}</span>
+                            </div>
                         </div>
+                        
                     </div>`;
                     ui.customerListContent.innerHTML += card;
                 });
@@ -682,6 +702,7 @@
             ui.transactionListContent.innerHTML = '<div class="flex flex-col items-center justify-center mt-10 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#ff6700] mb-4"></i><p class="font-medium">မှတ်တမ်းများ ဆွဲယူနေပါသည်...</p></div>';
             
             try {
+                // Fetch the latest 50 transactions
                 const q = query(collection(db, "transactions"), orderBy("timestamp", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 
@@ -721,6 +742,107 @@
                 ui.transactionListContent.innerHTML = '<div class="text-center text-red-500 mt-10 bg-red-50 p-4 rounded-xl border border-red-100"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>မှတ်တမ်းများ ဆွဲယူ၍ မရပါ။ စနစ်ချိတ်ဆက်မှု ပြဿနာရှိပါသည်။</div>';
             }
         }
+
+        window.showBranchStats = async function() {
+            if(!isAdmin) return;
+            ui.appScreen.classList.add('hidden');
+            ui.branchStatsScreen.classList.remove('hidden');
+            ui.branchStatsContent.innerHTML = '<div class="flex flex-col items-center justify-center mt-10 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#ff6700] mb-4"></i><p class="font-medium">အချက်အလက်များ တွက်ချက်နေပါသည်...</p></div>';
+            
+            try {
+                // Database ထဲရှိ Customer အားလုံးကို ဆွဲထုတ်၍ ဆိုင်ခွဲအလိုက် အလိုအလျောက် တွက်ချက်ခြင်း
+                const querySnapshot = await getDocs(collection(db, "customers"));
+                
+                let branchData = {};
+                let totalSystemPoints = 0;
+                let totalSystemCustomers = 0;
+
+                querySnapshot.forEach((docSnap) => {
+                    const c = docSnap.data();
+                    const branch = c.registered_branch || 'Unknown';
+                    
+                    // ဆိုင်အသစ်တွေ့ပါက အလိုအလျောက် ထပ်တိုးမည်
+                    if (!branchData[branch]) {
+                        branchData[branch] = { name: branch, points: 0, customers: 0 };
+                    }
+                    
+                    branchData[branch].points += (c.total || 0);
+                    branchData[branch].customers += 1;
+                    
+                    totalSystemPoints += (c.total || 0);
+                    totalSystemCustomers += 1;
+                });
+
+                let branches = Object.values(branchData);
+                
+                if(branches.length === 0) {
+                    ui.branchStatsContent.innerHTML = '<div class="text-center text-gray-500 mt-10">မှတ်တမ်း မရှိသေးပါ။</div>';
+                    return;
+                }
+
+                // အများဆုံး Point အရ စီရန် (Sort by Points)
+                branches.sort((a, b) => b.points - a.points);
+
+                let topPointBranch = branches[0];
+                // Customer အများဆုံး ဆိုင်ခွဲကို သီးသန့်ရှာရန်
+                let topCustomerBranch = [...branches].sort((a, b) => b.customers - a.customers)[0];
+
+                let html = `
+                    <!-- Highlight Cards -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-gradient-to-br from-[#ff6700] to-[#d95800] p-3 rounded-2xl text-white shadow-md relative overflow-hidden">
+                            <i class="fa-solid fa-crown absolute right-[-10px] bottom-[-10px] text-5xl opacity-20"></i>
+                            <div class="text-[10px] font-bold uppercase opacity-80 mb-1">Point အများဆုံး</div>
+                            <div class="font-black text-lg truncate">${topPointBranch.name}</div>
+                            <div class="text-xs font-medium mt-1 bg-white/20 inline-block px-2 py-0.5 rounded">${topPointBranch.points} Pts</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-3 rounded-2xl text-white shadow-md relative overflow-hidden">
+                            <i class="fa-solid fa-users absolute right-[-10px] bottom-[-10px] text-5xl opacity-20"></i>
+                            <div class="text-[10px] font-bold uppercase opacity-80 mb-1">Customer အများဆုံး</div>
+                            <div class="font-black text-lg truncate">${topCustomerBranch.name}</div>
+                            <div class="text-xs font-medium mt-1 bg-white/20 inline-block px-2 py-0.5 rounded">${topCustomerBranch.customers} ယောက်</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">ဆိုင်ခွဲအလိုက် ရာခိုင်နှုန်းများ</div>
+                `;
+
+                // Dynamic Progress Bars
+                branches.forEach(b => {
+                    const ptPercent = totalSystemPoints > 0 ? ((b.points / totalSystemPoints) * 100).toFixed(1) : 0;
+                    
+                    html += `
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden mb-3">
+                        <div class="flex justify-between items-end mb-2">
+                            <div class="font-bold text-gray-800 text-base"><i class="fa-solid fa-store text-[#ff6700] mr-1.5"></i>${b.name}</div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 font-medium">Customer: <span class="font-bold text-gray-800">${b.customers}</span> ယောက်</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mb-1 mt-3">
+                            <span class="text-xs font-bold text-gray-600">Total Points: ${b.points}</span>
+                            <span class="text-xs font-black text-[#ff6700]">${ptPercent}%</span>
+                        </div>
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-gray-100 rounded-full h-2.5">
+                            <div class="bg-[#ff6700] h-2.5 rounded-full transition-all duration-1000" style="width: ${ptPercent}%"></div>
+                        </div>
+                    </div>`;
+                });
+
+                ui.branchStatsContent.innerHTML = html;
+
+            } catch (error) {
+                console.error("Fetch Stats Error:", error);
+                ui.branchStatsContent.innerHTML = '<div class="text-center text-red-500 mt-10 bg-red-50 p-4 rounded-xl border border-red-100"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>စာရင်းဆွဲယူ၍ မရပါ။ စနစ်ချိတ်ဆက်မှု ပြဿနာရှိပါသည်။</div>';
+            }
+        };
+
+        window.hideBranchStats = function() {
+            ui.branchStatsScreen.classList.add('hidden');
+            ui.appScreen.classList.remove('hidden');
+        };
 
         ui.phoneInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loadCustomer(); });
         ui.nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loadCustomer(); });
