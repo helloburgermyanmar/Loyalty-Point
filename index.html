@@ -274,16 +274,16 @@
             btnTransactions: document.getElementById('btnTransactions'),
             transactionListContent: document.getElementById('transactionListContent'),
             btnBranchStats: document.getElementById('btnBranchStats'),
-            branchStatsScreen: document.getElementById('branchStatsScreen'),
-            branchStatsContent: document.getElementById('branchStatsContent')
-        };
-
+        // --- AUTHENTICATION LOGIC ---
         onAuthStateChanged(auth, (user) => {
             ui.globalLoader.style.opacity = '0';
             setTimeout(() => ui.globalLoader.style.display = 'none', 500);
 
             if (user) {
                 currentBranchName = user.email.split('@')[0]; 
+                
+                // ဖုန်း/Browser ၏ Storage ထဲတွင် ဆိုင်ခွဲနာမည်ကို အသေမှတ်ထားရန်
+                localStorage.setItem("savedBranchName", currentBranchName);
                 
                 // Admin Check
                 isAdmin = (currentBranchName === 'admin');
@@ -360,6 +360,8 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     resetCurrentCustomer();
+                    // Logout လုပ်ပါက အသေမှတ်ထားသော ဆိုင်ခွဲနာမည်ကို ပြန်ဖျက်ရန်
+                    localStorage.removeItem("savedBranchName");
                     await signOut(auth);
                 }
             });
@@ -411,6 +413,9 @@
                     const now = new Date();
                     const formattedDate = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-US', { hour12: true });
 
+                    // Memory မှ ပျောက်သွားပါက Local Storage မှ ပြန်ယူရန်
+                    let finalBranchName = currentBranchName || localStorage.getItem("savedBranchName") || "Unknown";
+
                     currentCustomerData = { 
                         no: newCustomerNo,
                         joined_date: formattedDate,
@@ -419,8 +424,8 @@
                         total: 0, 
                         used: 0, 
                         balance: 0,
-                        registered_branch: currentBranchName,
-                        last_visited_branch: currentBranchName
+                        registered_branch: finalBranchName,
+                        last_visited_branch: finalBranchName
                     };
                     await setDoc(docRef, currentCustomerData);
                     
@@ -457,11 +462,14 @@
             try {
                 const docRef = doc(db, "customers", currentPhone);
                 
+                // Memory မှ ပျောက်သွားပါက Local Storage မှ ပြန်ယူရန်
+                let finalBranchName = currentBranchName || localStorage.getItem("savedBranchName") || "Unknown";
+                
                 // 1. Point ပေါင်းခြင်း (Race Condition ကို Increment ဖြင့် ဖြေရှင်းထားသည်)
                 await updateDoc(docRef, {
                     total: increment(pointsToAdd),
                     balance: increment(pointsToAdd),
-                    last_visited_branch: currentBranchName
+                    last_visited_branch: finalBranchName
                 });
 
                 // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - ADD)
@@ -469,7 +477,7 @@
                 await addDoc(collection(db, "transactions"), {
                     phone: currentPhone,
                     customer_name: currentCustomerData.name,
-                    branch: currentBranchName,
+                    branch: finalBranchName,
                     action: "ADD",
                     points: pointsToAdd,
                     date: now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-US', { hour12: true }),
@@ -478,10 +486,7 @@
 
                 currentCustomerData.total += pointsToAdd;
                 currentCustomerData.balance += pointsToAdd;
-                currentCustomerData.last_visited_branch = currentBranchName;
-                
-                updateDashboard();
-                ui.addPointInput.value = '1';
+                currentCustomerData.last_visited_branch = finalBranchName;
 
                 Swal.fire({ icon: 'success', title: 'အောင်မြင်ပါသည်', text: `+${pointsToAdd} Point(s) ကိုပေါင်းထည့်ပြီးပါပြီ။`, timer: 1500, showConfirmButton: false });
             } catch (error) {
@@ -519,11 +524,14 @@
                     try {
                         const docRef = doc(db, "customers", currentPhone);
                         
+                        // Memory မှ ပျောက်သွားပါက Local Storage မှ ပြန်ယူရန်
+                        let finalBranchName = currentBranchName || localStorage.getItem("savedBranchName") || "Unknown";
+                        
                         // 1. Point နုတ်ခြင်း (Increment)
                         await updateDoc(docRef, {
                             balance: increment(-REWARD_COST),
                             used: increment(REWARD_COST),
-                            last_visited_branch: currentBranchName
+                            last_visited_branch: finalBranchName
                         });
 
                         // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - USE)
@@ -531,7 +539,7 @@
                         await addDoc(collection(db, "transactions"), {
                             phone: currentPhone,
                             customer_name: currentCustomerData.name,
-                            branch: currentBranchName,
+                            branch: finalBranchName,
                             action: "USE",
                             points: REWARD_COST,
                             item: "Cheese Burger",
@@ -541,10 +549,7 @@
 
                         currentCustomerData.balance -= REWARD_COST;
                         currentCustomerData.used += REWARD_COST;
-                        currentCustomerData.last_visited_branch = currentBranchName;
-                        
-                        updateDashboard();
-
+                        currentCustomerData.last_visited_branch = finalBranchName;
                         Swal.fire({ 
                             icon: 'success', 
                             title: 'အောင်မြင်ပါသည်', 
@@ -733,7 +738,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between items-center text-[10px] text-gray-500 font-medium bg-gray-50 p-2 rounded-lg mt-1">
-                            <span class="text-gray-700 font-bold"><i class="fa-solid fa-store mr-1"></i> ${t.branch}</span>
+                            <span class="text-gray-700 font-bold"><i class="fa-solid fa-store mr-1"></i> ${t.branch || 'Unknown (မသိရပါ)'}</span>
                             <span><i class="fa-solid fa-clock mr-1"></i> ${t.date || '-'}</span>
                         </div>
                     </div>`;
