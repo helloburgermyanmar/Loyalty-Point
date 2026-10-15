@@ -122,7 +122,6 @@
                         <i class="fa-solid fa-clock-rotate-left"></i> Transaction History (Admin)
                     </button>
                     
-                    <!-- NEW Branch Stats Button -->
                     <button onclick="showBranchStats()" id="btnBranchStats" class="w-full mt-2 bg-blue-50 border border-blue-200 text-blue-700 font-semibold rounded-xl py-3 hover:bg-blue-100 active:scale-95 transition-all hidden items-center justify-center gap-2 shadow-sm">
                         <i class="fa-solid fa-chart-pie"></i> Branch Statistics (Admin)
                     </button>
@@ -251,12 +250,14 @@
         let currentBranchName = ""; 
         let isAdmin = false;
 
+        // UI ကို ပိုမိုပြည့်စုံစွာ တွဲပေးထားပါသည် (Error ရှင်းပြီးသား)
         const ui = {
             globalLoader: document.getElementById('globalLoader'),
             loginScreen: document.getElementById('loginScreen'),
             appScreen: document.getElementById('appScreen'),
             listScreen: document.getElementById('listScreen'),
             transactionScreen: document.getElementById('transactionScreen'),
+            branchStatsScreen: document.getElementById('branchStatsScreen'),
             usernameInput: document.getElementById('usernameInput'), 
             passwordInput: document.getElementById('passwordInput'),
             currentUserDisplay: document.getElementById('currentUserDisplay'),
@@ -274,6 +275,9 @@
             btnTransactions: document.getElementById('btnTransactions'),
             transactionListContent: document.getElementById('transactionListContent'),
             btnBranchStats: document.getElementById('btnBranchStats'),
+            branchStatsContent: document.getElementById('branchStatsContent')
+        }; // <-- ဒီအပိတ်ကွင်းလေး ကျန်ခဲ့တာပါ
+
         // --- AUTHENTICATION LOGIC ---
         onAuthStateChanged(auth, (user) => {
             ui.globalLoader.style.opacity = '0';
@@ -487,6 +491,9 @@
                 currentCustomerData.total += pointsToAdd;
                 currentCustomerData.balance += pointsToAdd;
                 currentCustomerData.last_visited_branch = finalBranchName;
+                
+                updateDashboard();
+                ui.addPointInput.value = '1';
 
                 Swal.fire({ icon: 'success', title: 'အောင်မြင်ပါသည်', text: `+${pointsToAdd} Point(s) ကိုပေါင်းထည့်ပြီးပါပြီ။`, timer: 1500, showConfirmButton: false });
             } catch (error) {
@@ -550,6 +557,9 @@
                         currentCustomerData.balance -= REWARD_COST;
                         currentCustomerData.used += REWARD_COST;
                         currentCustomerData.last_visited_branch = finalBranchName;
+                        
+                        updateDashboard();
+
                         Swal.fire({ 
                             icon: 'success', 
                             title: 'အောင်မြင်ပါသည်', 
@@ -738,7 +748,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between items-center text-[10px] text-gray-500 font-medium bg-gray-50 p-2 rounded-lg mt-1">
-                            <span class="text-gray-700 font-bold"><i class="fa-solid fa-store mr-1"></i> ${t.branch || 'Unknown (မသိရပါ)'}</span>
+                            <span class="text-gray-700 font-bold"><i class="fa-solid fa-store mr-1"></i> ${t.branch || 'Unknown'}</span>
                             <span><i class="fa-solid fa-clock mr-1"></i> ${t.date || '-'}</span>
                         </div>
                     </div>`;
