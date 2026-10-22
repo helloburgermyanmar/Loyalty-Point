@@ -281,7 +281,7 @@
             transactionListContent: document.getElementById('transactionListContent'),
             btnBranchStats: document.getElementById('btnBranchStats'),
             branchStatsContent: document.getElementById('branchStatsContent')
-        }; // <-- ဒီအပိတ်ကွင်းလေး ကျန်ခဲ့တာပါ
+        };
 
         // --- AUTHENTICATION LOGIC ---
         onAuthStateChanged(auth, (user) => {
@@ -385,6 +385,12 @@
                 formatted = '09' + formatted.substring(4);
             }
             this.value = formatted;
+
+            // ဖုန်းနံပါတ် ပြင်ရိုက်လိုက်သည်နှင့် Check ပြန်မနှိပ်မချင်း အောက်က Point ခလုတ်များကို အလိုအလျောက် ပြန်ပိတ်ထားရန် (Lock)
+            currentPhone = null;
+            currentCustomerData = null;
+            ui.statsSection.classList.add('opacity-50', 'pointer-events-none');
+            ui.actionSection.classList.add('opacity-50', 'pointer-events-none');
         });
 
         window.loadCustomer = async function() {
@@ -457,7 +463,7 @@
             }
         };
 
-        window.addPoints = async function() {
+        window.addPoints = function() {
             if (!currentPhone || !currentCustomerData) return;
             
             const pointsToAdd = parseInt(ui.addPointInput.value);
@@ -466,45 +472,58 @@
                 return;
             }
 
-            Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            Swal.fire({
+                title: 'Point ပေါင်းမည်',
+                text: `${pointsToAdd} Points ပေါင်းထည့်မည်မှာ သေချာပါသလား?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'သေချာပါသည်',
+                cancelButtonText: 'မလုပ်ပါ'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-            try {
-                const docRef = doc(db, "customers", currentPhone);
-                
-                // Memory မှ ပျောက်သွားပါက Local Storage မှ ပြန်ယူရန်
-                let finalBranchName = currentBranchName || localStorage.getItem("savedBranchName") || "Unknown";
-                
-                // 1. Point ပေါင်းခြင်း (Race Condition ကို Increment ဖြင့် ဖြေရှင်းထားသည်)
-                await updateDoc(docRef, {
-                    total: increment(pointsToAdd),
-                    balance: increment(pointsToAdd),
-                    last_visited_branch: finalBranchName
-                });
+                    try {
+                        const docRef = doc(db, "customers", currentPhone);
+                        
+                        // Memory မှ ပျောက်သွားပါက Local Storage မှ ပြန်ယူရန်
+                        let finalBranchName = currentBranchName || localStorage.getItem("savedBranchName") || "Unknown";
+                        
+                        // 1. Point ပေါင်းခြင်း (Race Condition ကို Increment ဖြင့် ဖြေရှင်းထားသည်)
+                        await updateDoc(docRef, {
+                            total: increment(pointsToAdd),
+                            balance: increment(pointsToAdd),
+                            last_visited_branch: finalBranchName
+                        });
 
-                // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - ADD)
-                const now = new Date();
-                await addDoc(collection(db, "transactions"), {
-                    phone: currentPhone,
-                    customer_name: currentCustomerData.name,
-                    branch: finalBranchName,
-                    action: "ADD",
-                    points: pointsToAdd,
-                    date: now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-US', { hour12: true }),
-                    timestamp: Date.now()
-                });
+                        // 2. သမိုင်းကြောင်း မှတ်တမ်းတင်ခြင်း (Audit Log - ADD)
+                        const now = new Date();
+                        await addDoc(collection(db, "transactions"), {
+                            phone: currentPhone,
+                            customer_name: currentCustomerData.name,
+                            branch: finalBranchName,
+                            action: "ADD",
+                            points: pointsToAdd,
+                            date: now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-US', { hour12: true }),
+                            timestamp: Date.now()
+                        });
 
-                currentCustomerData.total += pointsToAdd;
-                currentCustomerData.balance += pointsToAdd;
-                currentCustomerData.last_visited_branch = finalBranchName;
-                
-                updateDashboard();
-                ui.addPointInput.value = '1';
+                        currentCustomerData.total += pointsToAdd;
+                        currentCustomerData.balance += pointsToAdd;
+                        currentCustomerData.last_visited_branch = finalBranchName;
+                        
+                        updateDashboard();
+                        ui.addPointInput.value = '1';
 
-                Swal.fire({ icon: 'success', title: 'အောင်မြင်ပါသည်', text: `+${pointsToAdd} Point(s) ကိုပေါင်းထည့်ပြီးပါပြီ။`, timer: 1500, showConfirmButton: false });
-            } catch (error) {
-                console.error(error);
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Point ပေါင်းထည့်၍ မရပါ။ Login ပြန်ဝင်ကြည့်ပါ။' });
-            }
+                        Swal.fire({ icon: 'success', title: 'အောင်မြင်ပါသည်', text: `+${pointsToAdd} Point(s) ကိုပေါင်းထည့်ပြီးပါပြီ။`, timer: 1500, showConfirmButton: false });
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Point ပေါင်းထည့်၍ မရပါ။ Login ပြန်ဝင်ကြည့်ပါ။' });
+                    }
+                }
+            });
         };
 
         window.usePoints = function() {
