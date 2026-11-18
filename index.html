@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello Burger | Loyalty Point</title>
+    <title>Hello Burger | Loyalty-Point</title>
     
     <!-- Favicon အပြည့်အစုံ (Browser, iPhone, Android အားလုံးအတွက်) -->
     <link rel="icon" type="image/png" href="hello-burger-logo.png">
@@ -50,7 +50,7 @@
             <img src="hello-burger-logo.png" alt="Hello Burger Logo" class="w-full h-full object-contain p-1" onerror="this.src='https://placehold.co/150x150/ffd400/ff6700?text=Logo'">
         </div>
         <h1 class="text-2xl font-bold text-gray-800 mb-1">Hello Burger</h1>
-        <p class="text-sm text-gray-500 mb-6 font-medium">Login</p>
+        <p class="text-sm text-gray-500 mb-6 font-medium"> (Login)</p>
         
         <div class="w-full space-y-4">
             <div class="relative">
@@ -80,7 +80,7 @@
                     <img src="hello-burger-logo.png" alt="Logo" class="w-full h-full object-contain p-0.5" onerror="this.src='https://placehold.co/150x150/ffd400/ff6700?text=Logo'">
                 </div>
                 <div>
-                    <h2 class="font-bold text-lg leading-tight">Loyalty Point</h2>
+                    <h2 class="font-bold text-lg leading-tight">Loyalty-Point</h2>
                     <p class="text-xs text-[#ffd400] font-medium" id="currentUserDisplay">Logged In</p>
                 </div>
             </div>
@@ -798,6 +798,7 @@
                 
                 let branchData = {};
                 let totalSystemPoints = 0;
+                let totalSystemUsed = 0;
                 let totalSystemCustomers = 0;
 
                 querySnapshot.forEach((docSnap) => {
@@ -806,13 +807,15 @@
                     
                     // ဆိုင်အသစ်တွေ့ပါက အလိုအလျောက် ထပ်တိုးမည်
                     if (!branchData[branch]) {
-                        branchData[branch] = { name: branch, points: 0, customers: 0 };
+                        branchData[branch] = { name: branch, points: 0, used: 0, customers: 0 };
                     }
                     
                     branchData[branch].points += (c.total || 0);
+                    branchData[branch].used += (c.used || 0);
                     branchData[branch].customers += 1;
                     
                     totalSystemPoints += (c.total || 0);
+                    totalSystemUsed += (c.used || 0);
                     totalSystemCustomers += 1;
                 });
 
@@ -827,23 +830,50 @@
                 branches.sort((a, b) => b.points - a.points);
 
                 let topPointBranch = branches[0];
+                // Point အသုံးအများဆုံး ဆိုင်ခွဲကို ရှာရန်
+                let topUsedBranch = [...branches].sort((a, b) => b.used - a.used)[0];
                 // Customer အများဆုံး ဆိုင်ခွဲကို သီးသန့်ရှာရန်
                 let topCustomerBranch = [...branches].sort((a, b) => b.customers - a.customers)[0];
 
                 let html = `
-                    <!-- Highlight Cards -->
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="bg-gradient-to-br from-[#ff6700] to-[#d95800] p-3 rounded-2xl text-white shadow-md relative overflow-hidden">
-                            <i class="fa-solid fa-crown absolute right-[-10px] bottom-[-10px] text-5xl opacity-20"></i>
-                            <div class="text-[10px] font-bold uppercase opacity-80 mb-1">Highest Points</div>
-                            <div class="font-black text-lg truncate">${topPointBranch.name}</div>
-                            <div class="text-xs font-medium mt-1 bg-white/20 inline-block px-2 py-0.5 rounded">${topPointBranch.points} Pts</div>
+                    <!-- All Branches Summary -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm mb-3">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">All Branches Summary</div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-orange-50 rounded-xl py-2 px-1 border border-orange-100">
+                                <div class="text-[10px] font-semibold text-orange-600">Total Points</div>
+                                <div class="font-black text-gray-800 text-sm mt-0.5">${totalSystemPoints}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-xl py-2 px-1 border border-green-100">
+                                <div class="text-[10px] font-semibold text-green-600">Used Points</div>
+                                <div class="font-black text-green-700 text-sm mt-0.5">${totalSystemUsed} <span class="text-[10px] font-bold">(${Math.floor(totalSystemUsed / REWARD_COST)} 🍔)</span></div>
+                            </div>
+                            <div class="bg-blue-50 rounded-xl py-2 px-1 border border-blue-100">
+                                <div class="text-[10px] font-semibold text-blue-600">Customers</div>
+                                <div class="font-black text-gray-800 text-sm mt-0.5">${totalSystemCustomers}</div>
+                            </div>
                         </div>
-                        <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-3 rounded-2xl text-white shadow-md relative overflow-hidden">
-                            <i class="fa-solid fa-users absolute right-[-10px] bottom-[-10px] text-5xl opacity-20"></i>
-                            <div class="text-[10px] font-bold uppercase opacity-80 mb-1">Most Customers</div>
-                            <div class="font-black text-lg truncate">${topCustomerBranch.name}</div>
-                            <div class="text-xs font-medium mt-1 bg-white/20 inline-block px-2 py-0.5 rounded">${topCustomerBranch.customers} Customers</div>
+                    </div>
+
+                    <!-- Highlight Cards -->
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="bg-gradient-to-br from-[#ff6700] to-[#d95800] p-2.5 rounded-2xl text-white shadow-md relative overflow-hidden">
+                            <i class="fa-solid fa-crown absolute right-[-8px] bottom-[-8px] text-4xl opacity-20"></i>
+                            <div class="text-[9px] font-bold uppercase opacity-80 mb-0.5">Top Points</div>
+                            <div class="font-black text-xs truncate">${topPointBranch.name}</div>
+                            <div class="text-[10px] font-medium mt-1 bg-white/20 inline-block px-1.5 py-0.5 rounded">${topPointBranch.points} Pts</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-green-700 p-2.5 rounded-2xl text-white shadow-md relative overflow-hidden">
+                            <i class="fa-solid fa-burger absolute right-[-8px] bottom-[-8px] text-4xl opacity-20"></i>
+                            <div class="text-[9px] font-bold uppercase opacity-80 mb-0.5">Most Used</div>
+                            <div class="font-black text-xs truncate">${topUsedBranch.name}</div>
+                            <div class="text-[10px] font-medium mt-1 bg-white/20 inline-block px-1.5 py-0.5 rounded">${topUsedBranch.used} Pts</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-2.5 rounded-2xl text-white shadow-md relative overflow-hidden">
+                            <i class="fa-solid fa-users absolute right-[-8px] bottom-[-8px] text-4xl opacity-20"></i>
+                            <div class="text-[9px] font-bold uppercase opacity-80 mb-0.5">Top Users</div>
+                            <div class="font-black text-xs truncate">${topCustomerBranch.name}</div>
+                            <div class="text-[10px] font-medium mt-1 bg-white/20 inline-block px-1.5 py-0.5 rounded">${topCustomerBranch.customers} Users</div>
                         </div>
                     </div>
                     
@@ -853,12 +883,15 @@
                 // Dynamic Progress Bars
                 branches.forEach(b => {
                     const ptPercent = totalSystemPoints > 0 ? ((b.points / totalSystemPoints) * 100).toFixed(1) : 0;
+                    const usedPercent = totalSystemUsed > 0 ? ((b.used / totalSystemUsed) * 100).toFixed(1) : 0;
                     const custPercent = totalSystemCustomers > 0 ? ((b.customers / totalSystemCustomers) * 100).toFixed(1) : 0;
+                    const burgerCount = Math.floor(b.used / REWARD_COST);
                     
                     html += `
                     <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden mb-3">
-                        <div class="flex justify-between items-end mb-2">
+                        <div class="flex justify-between items-center mb-2">
                             <div class="font-bold text-gray-800 text-base"><i class="fa-solid fa-store text-[#ff6700] mr-1.5"></i>${b.name}</div>
+                            <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded-lg border border-gray-200">Balance: ${b.points - b.used} Pts</span>
                         </div>
                         
                         <!-- Points Progress -->
@@ -868,6 +901,15 @@
                         </div>
                         <div class="w-full bg-gray-100 rounded-full h-2.5 mb-3">
                             <div class="bg-[#ff6700] h-2.5 rounded-full transition-all duration-1000" style="width: ${ptPercent}%"></div>
+                        </div>
+
+                        <!-- Used Points Progress -->
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-gray-600">Used Points: ${b.used} <span class="text-green-600 font-extrabold">(${burgerCount} Burgers)</span></span>
+                            <span class="text-xs font-black text-green-600">${usedPercent}%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2.5 mb-3">
+                            <div class="bg-green-500 h-2.5 rounded-full transition-all duration-1000" style="width: ${usedPercent}%"></div>
                         </div>
 
                         <!-- Customers Progress -->
